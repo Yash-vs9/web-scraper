@@ -11,7 +11,14 @@ import ssl
 from html.parser import HTMLParser
 import io
 import pandas as pd
+from openai import OpenAI
+
 import plotly.express as px
+import openai  # ← New import
+
+# Ensure you have your OpenAI API key set:
+# export OPENAI_API_KEY="your_key_here"
+openai.api_key = "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"
 
 # ---------------------- HTML PARSER ---------------------- #
 class EnhancedParser(HTMLParser):
@@ -136,6 +143,37 @@ def analyze(aggregated):
         'total_phones': len(set(aggregated['phones']))
     }
 
+# ---------------------- NEW: SUMMARIZATION FUNCTION ---------------------- #
+def generate_summary(text: str, max_tokens: int = 150) -> str:
+    """
+    Uses OpenAI API to summarize the given text.
+    Note: Text may need to be truncated if too long.
+    """
+    if not openai.api_key:
+        return "OpenAI API key not found – summary unavailable."
+    
+    # truncate long text to avoid token limits
+    max_length = 2000  # adjust based on model limits
+    if len(text) > max_length:
+        text = text[:max_length] + " …"
+    
+    prompt = f"Please provide a concise summary of the following content:\n\n{text}\n\nSummary:"
+    try:
+        client = OpenAI(api_key="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")
+
+        response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful summarizer."},
+            {"role": "user", "content": "Summarize this article text: <your_text_here>"}
+        ]
+        )
+
+        summary = response.choices[0].message.content
+        return summary
+    except Exception as e:
+        return f"Summary generation error: {str(e)}"
+
 def export_full_report(start_url, results, aggregated, analytics):
     report = {
         'metadata': {
@@ -167,8 +205,8 @@ def export_full_report(start_url, results, aggregated, analytics):
 
 # ---------------------- STREAMLIT UI ---------------------- #
 st.set_page_config(page_title="🔍 Web Crawler Dashboard", layout="wide", initial_sidebar_state="expanded")
-st.title("🌐 Web Crawler & Analyzer")
-st.caption("An interactive crawler that analyzes websites — keywords, structure, links, and more.")
+st.title("🌐 Web Crawler & Analyzer with AI Summary")
+st.caption("An interactive crawler + analyzer + summary generator for any website.")
 
 url = st.text_input("🌍 Enter starting URL (with or without https://)")
 max_pages = st.slider("📄 Max pages to crawl", min_value=1, max_value=50, value=5)
@@ -194,6 +232,10 @@ if st.button("🚀 Start Crawl"):
         analytics = analyze(aggregated)
         filename = export_full_report(url, results, aggregated, analytics)
 
+        # Generate summary of all scraped text
+        full_text_for_summary = " ".join(aggregated['text'])
+        summary = generate_summary(full_text_for_summary)
+
         # ---- Summary Metrics ---- #
         st.header("📊 Site Summary")
         col1, col2, col3, col4 = st.columns(4)
@@ -201,6 +243,10 @@ if st.button("🚀 Start Crawl"):
         col2.metric("🔠 Unique Words", f"{analytics['unique_words']:,}")
         col3.metric("📧 Emails Found", analytics['total_emails'])
         col4.metric("📱 Phones Found", analytics['total_phones'])
+
+        # ---- AI-Generated Summary ---- #
+        st.subheader("📝 AI-Generated Summary")
+        st.write(summary)
 
         # ---- Keyword Graph ---- #
         st.subheader("🔑 Top Keywords")
@@ -216,7 +262,6 @@ if st.button("🚀 Start Crawl"):
         fail_count = len([r for r in results.values() if r['status'] == 'failed'])
         fig_status = px.pie(values=[success_count, fail_count], 
                             names=["Successful", "Failed"], 
-                            color=["Successful", "Failed"],
                             title="Crawl Success Rate")
         st.plotly_chart(fig_status, use_container_width=True)
 
@@ -249,8 +294,8 @@ if st.button("🚀 Start Crawl"):
 
         # ---- Pages Overview ---- #
         st.header("🗂️ Pages Overview")
-        for url, data in results.items():
-            if data['status'] == 'success':
-                st.markdown(f"✅ **{url}** — {data['links']} links, {data['images']} images, {data['text_length']} chars")
+        for u, d in results.items():
+            if d['status'] == 'success':
+                st.markdown(f"✅ **{u}** — {d['links']} links, {d['images']} images, {d['text_length']} chars")
             else:
-                st.markdown(f"❌ **{url}** — {data.get('error', 'Unknown error')}")
+                st.markdown(f"❌ **{u}** — {d.get('error', 'Unknown error')}") 

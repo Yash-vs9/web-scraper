@@ -1,0 +1,265 @@
+{
+  "metadata": {
+    "start_url": "https://www.geeksforgeeks.org/dsa/introduction-to-graphs-data-structure-and-algorithm-tutorials/",
+    "scraped_at": "2025-11-02 11:55:55",
+    "pages_crawled": 5,
+    "pages_failed": 0
+  },
+  "site_statistics": {
+    "total_links": 405,
+    "unique_links": 159,
+    "total_images": 286,
+    "total_headings": 276,
+    "total_words": 33758,
+    "unique_words": 2503,
+    "emails_found": 1,
+    "phones_found": 1
+  },
+  "top_keywords": [
+    {
+      "word": "geeksforgeeks",
+      "count": 1133
+    },
+    {
+      "word": "https",
+      "count": 1079
+    },
+    {
+      "word": "nextui",
+      "count": 732
+    },
+    {
+      "word": "null",
+      "count": 694
+    },
+    {
+      "word": "link",
+      "count": 671
+    },
+    {
+      "word": "title",
+      "count": 669
+    },
+    {
+      "word": "false",
+      "count": 666
+    },
+    {
+      "word": "children",
+      "count": 600
+    },
+    {
+      "word": "courses",
+      "count": 564
+    },
+    {
+      "word": "gate",
+      "count": 554
+    },
+    {
+      "word": "true",
+      "count": 529
+    },
+    {
+      "word": "data",
+      "count": 420
+    },
+    {
+      "word": "media",
+      "count": 330
+    },
+    {
+      "word": "font",
+      "count": 328
+    },
+    {
+      "word": "colors",
+      "count": 275
+    }
+  ],
+  "pages": {
+    "https://www.geeksforgeeks.org/dsa/introduction-to-graphs-data-structure-and-algorithm-tutorials/": {
+      "status": "success",
+      "links": 146,
+      "images": 19,
+      "headings": 27,
+      "emails": [],
+      "phones": [],
+      "text_length": 100666
+    },
+    "https://www.geeksforgeeks.org": {
+      "status": "success",
+      "links": 103,
+      "images": 12,
+      "headings": 5,
+      "emails": [
+        "feedback@geeksforgeeks.org"
+      ],
+      "phones": [],
+      "text_length": 157831
+    },
+    "https://www.geeksforgeeks.org/courses/category/dsa-placements": {
+      "status": "success",
+      "links": 52,
+      "images": 9,
+      "headings": 4,
+      "emails": [
+        "feedback@geeksforgeeks.org"
+      ],
+      "phones": [],
+      "text_length": 52227
+    },
+    "https://www.geeksforgeeks.org/courses/category/gate": {
+      "status": "success",
+      "links": 52,
+      "images": 237,
+      "headings": 236,
+      "emails": [
+        "feedback@geeksforgeeks.org"
+      ],
+      "phones": [
+        "8130600851"
+      ],
+      "text_length": 109278
+    },
+    "https://www.geeksforgeeks.org/courses/category/machine-learning-data-science": {
+      "status": "success",
+      "links": 52,
+      "images": 9,
+      "headings": 4,
+      "emails": [
+        "feedback@geeksforgeeks.org"
+      ],
+      "phones": [],
+      "text_length": 53045
+    }
+  },
+  "all_emails": [
+    "feedback@geeksforgeeks.org"
+  ],
+  "all_phones": [
+    "8130600851"
+  ],
+  "sample_headings": [
+    {
+      "level": "h2",
+      "text": "DSA Fundamentals"
+    },
+    {
+      "level": "h2",
+      "text": "Data Structures"
+    },
+    {
+      "level": "h2",
+      "text": "Algorithms"
+    },
+    {
+      "level": "h2",
+      "text": "Advanced"
+    },
+    {
+      "level": "h2",
+      "text": "Interview Preparation"
+    },
+    {
+      "level": "h2",
+      "text": "Practice Problem"
+    },
+    {
+      "level": "h1",
+      "text": "Introduction to Graph Data Structure"
+    },
+    {
+      "level": "h2",
+      "text": "Components of Graph Data Structure"
+    },
+    {
+      "level": "h2",
+      "text": "Types Of"
+    },
+    {
+      "level": "h2",
+      "text": "Graphs in Data Structure and Algorithms"
+    },
+    {
+      "level": "h2",
+      "text": "Based on weight :"
+    },
+    {
+      "level": "h3",
+      "text": "1. Weighted Graphs"
+    },
+    {
+      "level": "h3",
+      "text": "2. Unweighted Graphs"
+    },
+    {
+      "level": "h2",
+      "text": "Based on Edge Direction:"
+    },
+    {
+      "level": "h3",
+      "text": "3. Undirected Graph"
+    },
+    {
+      "level": "h3",
+      "text": "4. Directed Graph"
+    },
+    {
+      "level": "h2",
+      "text": "Representation of Graph Data Structure:"
+    },
+    {
+      "level": "h3",
+      "text": "Adjacency Matrix Representation of Graph Data Structure:"
+    },
+    {
+      "level": "h3",
+      "text": "Adjacency List Representation of Graph:"
+    },
+    {
+      "level": "h2",
+      "text": "Difference between Tree and Graph:"
+    },
+    {
+      "level": "h2",
+      "text": "Traversal Technique of Graph:"
+    },
+    {
+      "level": "h3",
+      "text": "Depth First Search (DFS):"
+    },
+    {
+      "level": "h3",
+      "text": "Breadth First Search (BFS)"
+    },
+    {
+      "level": "h2",
+      "text": "Real-Life Applications of Graph Data Structure:"
+    },
+    {
+      "level": "h2",
+      "text": "Advantages of Graph Data Structure:"
+    },
+    {
+      "level": "h2",
+      "text": "Thank You!"
+    },
+    {
+      "level": "h2",
+      "text": "What kind of Experience do you want to share?"
+    },
+    {
+      "level": "h2",
+      "text": "Courses"
+    },
+    {
+      "level": "h2",
+      "text": "Must Explore"
+    },
+    {
+      "level": "h2",
+      "text": "Explore"
+    }
+  ]
+}
