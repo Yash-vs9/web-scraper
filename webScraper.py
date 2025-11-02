@@ -1,12 +1,19 @@
-from html.parser import HTMLParser
-from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
-from urllib.parse import urljoin, urlparse
-import ssl, re, json, time
-from collections import Counter
+import streamlit as st
+import json
+import time
 from datetime import datetime
+from collections import Counter
+import re
+from urllib.request import Request, urlopen
+from urllib.parse import urljoin, urlparse
+from urllib.error import URLError, HTTPError
+import ssl
+from html.parser import HTMLParser
+import io
+import pandas as pd
+import plotly.express as px
 
-
+# ---------------------- HTML PARSER ---------------------- #
 class EnhancedParser(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -42,13 +49,12 @@ class EnhancedParser(HTMLParser):
             for phone in re.findall(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b', stripped):
                 self.data['phones'].append(phone)
 
-
+# ---------------------- CORE SCRAPER ---------------------- #
 def scrape(url, timeout=10):
     ctx = ssl._create_unverified_context()
     req = Request(url, headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
     })
     with urlopen(req, context=ctx, timeout=timeout) as response:
         data = response.read()
@@ -57,16 +63,14 @@ def scrape(url, timeout=10):
         except UnicodeDecodeError:
             return data.decode('latin-1', errors='ignore')
 
-
 def normalize_url(url, base_url):
-    if not url or url.startswith('#') or url.startswith('javascript:') or url.startswith('mailto:') or url.startswith('tel:'):
+    if not url or url.startswith(('#', 'javascript:', 'mailto:', 'tel:')):
         return None
     full_url = urljoin(base_url, url)
     parsed = urlparse(full_url)
     return f"{parsed.scheme}://{parsed.netloc}{parsed.path}".rstrip('/')
 
-
-def crawl_site(start_url, max_pages=10, delay=0.5):
+def crawl_site(start_url, max_pages=10, delay=0.5, progress_callback=None):
     visited, to_visit, results = set(), [start_url], {}
     base_domain = urlparse(start_url).netloc
     
@@ -76,7 +80,9 @@ def crawl_site(start_url, max_pages=10, delay=0.5):
             continue
         
         try:
-            print(f"  🔍 Crawling [{len(visited)+1}/{max_pages}]: {url[:60]}...")
+            if progress_callback:
+                progress_callback(f"🔍 Crawling [{len(visited)+1}/{max_pages}]: {url}")
+            
             html = scrape(url)
             parser = EnhancedParser()
             parser.feed(html)
@@ -106,31 +112,22 @@ def crawl_site(start_url, max_pages=10, delay=0.5):
     
     return results, visited
 
-
+# ---------------------- ANALYTICS ---------------------- #
 def aggregate_data(results):
     all_data = {'links': [], 'headings': [], 'images': [], 'text': [], 'emails': [], 'phones': []}
-    
     for url, result in results.items():
         if result['status'] == 'success' and 'data' in result:
             data = result['data']
-            all_data['links'].extend(data['links'])
-            all_data['headings'].extend(data['headings'])
-            all_data['images'].extend(data['images'])
-            all_data['text'].extend(data['text'])
-            all_data['emails'].extend(data['emails'])
-            all_data['phones'].extend(data['phones'])
-    
+            for key in all_data:
+                all_data[key].extend(data[key])
     return all_data
-
 
 def analyze(aggregated):
     full_text = ' '.join(aggregated['text'])
     words = re.findall(r'\b[a-zA-Z]{4,}\b', full_text.lower())
-    stop_words = {'this', 'that', 'with', 'from', 'have', 'will', 'your', 'about', 
-                  'which', 'their', 'there', 'would', 'could', 'should', 'been', 'more'}
+    stop_words = {'this','that','with','from','have','will','your','about','which','their','there','would','could','should','been','more'}
     filtered = [w for w in words if w not in stop_words]
     word_freq = Counter(filtered).most_common(15)
-    
     return {
         'total_words': len(words),
         'unique_words': len(set(words)),
@@ -138,7 +135,6 @@ def analyze(aggregated):
         'total_emails': len(set(aggregated['emails'])),
         'total_phones': len(set(aggregated['phones']))
     }
-
 
 def export_full_report(start_url, results, aggregated, analytics):
     report = {
@@ -164,68 +160,97 @@ def export_full_report(start_url, results, aggregated, analytics):
         'all_phones': list(set(aggregated['phones']))[:20],
         'sample_headings': aggregated['headings'][:30]
     }
-    
     filename = f"fullscrape_{re.sub(r'[^a-zA-Z0-9]', '_', start_url[:25])}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
-    
     return filename
 
+# ---------------------- STREAMLIT UI ---------------------- #
+st.set_page_config(page_title="🔍 Web Crawler Dashboard", layout="wide", initial_sidebar_state="expanded")
+st.title("🌐 Web Crawler & Analyzer")
+st.caption("An interactive crawler that analyzes websites — keywords, structure, links, and more.")
 
-def display_results(start_url, results, aggregated, analytics, filename):
-    success = len([r for r in results.values() if r['status'] == 'success'])
-    failed = len([r for r in results.values() if r['status'] == 'failed'])
-    
-    print('\n' + '='*80)
-    print(f'🌐 FULL SITE CRAWL REPORT: {start_url}')
-    print('='*80)
-    print(f"📄 PAGES CRAWLED: {success} successful | {failed} failed")
-    print(f"📊 AGGREGATE STATISTICS:")
-    print(f"  • Total Words: {analytics['total_words']:,} | Unique: {analytics['unique_words']:,}")
-    print(f"  • Total Links: {len(aggregated['links']):,} | Unique: {len(set(aggregated['links'])):,}")
-    print(f"  • Images: {len(aggregated['images']):,} | Headings: {len(aggregated['headings']):,}")
-    print(f"  • Emails: {analytics['total_emails']} | Phones: {analytics['total_phones']}")
-    print('-'*80)
-    print(f"🔑 TOP KEYWORDS (across all pages):")
-    for word, count in analytics['top_keywords'][:8]:
-        bar = '█' * min(int(count/10), 40)
-        print(f"  {word:<20} {bar} {count}")
-    print('-'*80)
-    print(f"📋 PAGES BREAKDOWN:")
-    for url, data in list(results.items())[:10]:
-        status = "✅" if data['status'] == 'success' else "❌"
-        if data['status'] == 'success':
-            print(f"  {status} {url[:65]}")
-            print(f"     Links: {data['links']} | Images: {data['images']} | Text: {data['text_length']} chars")
-        else:
-            print(f"  {status} {url[:65]} - {data.get('error', 'Unknown error')}")
-    if len(results) > 10:
-        print(f"  ... and {len(results)-10} more pages")
-    print('-'*80)
-    print(f"💾 Full report saved: {filename}")
-    print('='*80 + '\n')
+url = st.text_input("🌍 Enter starting URL (with or without https://)")
+max_pages = st.slider("📄 Max pages to crawl", min_value=1, max_value=50, value=5)
 
+if st.button("🚀 Start Crawl"):
+    if not url:
+        st.error("Please enter a valid URL.")
+    else:
+        if not url.startswith('http'):
+            url = 'https://' + url
 
-def main():
-    url = input("🌐 Enter starting URL: ").strip()
-    if not url.startswith('http'):
-        url = 'https://' + url
-    
-    max_pages = int(input("📄 Max pages to crawl (default 10): ").strip() or "10")
-    
-    try:
-        print(f"\n⏳ Starting crawl from {url}...\n")
-        results, visited = crawl_site(url, max_pages=max_pages)
-        print(f"\n✅ Crawl complete! Visited {len(visited)} pages.")
-        
+        progress_area = st.empty()
+        with st.spinner("Crawling in progress..."):
+            results, visited = crawl_site(
+                url, 
+                max_pages=max_pages, 
+                progress_callback=lambda msg: progress_area.info(msg)
+            )
+
+        st.success(f"✅ Crawl complete! Visited {len(visited)} pages.")
+
         aggregated = aggregate_data(results)
         analytics = analyze(aggregated)
         filename = export_full_report(url, results, aggregated, analytics)
-        display_results(url, results, aggregated, analytics, filename)
-        
-    except Exception as e:
-        print(f"❌ Fatal error: {e}")
 
+        # ---- Summary Metrics ---- #
+        st.header("📊 Site Summary")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("🧾 Total Words", f"{analytics['total_words']:,}")
+        col2.metric("🔠 Unique Words", f"{analytics['unique_words']:,}")
+        col3.metric("📧 Emails Found", analytics['total_emails'])
+        col4.metric("📱 Phones Found", analytics['total_phones'])
 
-if __name__ == "__main__":
-    main()
+        # ---- Keyword Graph ---- #
+        st.subheader("🔑 Top Keywords")
+        df_keywords = pd.DataFrame(analytics['top_keywords'], columns=["Word", "Count"])
+        fig_keywords = px.bar(df_keywords, x="Word", y="Count", color="Count",
+                              title="Most Frequent Keywords",
+                              color_continuous_scale="turbo")
+        st.plotly_chart(fig_keywords, use_container_width=True)
+
+        # ---- Page Success Chart ---- #
+        st.subheader("📈 Crawl Status Overview")
+        success_count = len([r for r in results.values() if r['status'] == 'success'])
+        fail_count = len([r for r in results.values() if r['status'] == 'failed'])
+        fig_status = px.pie(values=[success_count, fail_count], 
+                            names=["Successful", "Failed"], 
+                            color=["Successful", "Failed"],
+                            title="Crawl Success Rate")
+        st.plotly_chart(fig_status, use_container_width=True)
+
+        # ---- Links vs Images ---- #
+        st.subheader("🔗 Links vs 🖼️ Images Per Page")
+        page_data = [{'URL': u, 'Links': d.get('links', 0), 'Images': d.get('images', 0)} 
+                     for u, d in results.items() if d['status'] == 'success']
+        df_pages = pd.DataFrame(page_data)
+        if not df_pages.empty:
+            fig_links_images = px.scatter(df_pages, x="Links", y="Images", text="URL",
+                                          color="Images", size="Links",
+                                          title="Relationship Between Links & Images")
+            st.plotly_chart(fig_links_images, use_container_width=True)
+
+        # ---- Download JSON ---- #
+        with open(filename, "r", encoding="utf-8") as f:
+            st.download_button(
+                label="💾 Download Full Report (JSON)",
+                data=f.read(),
+                file_name=filename,
+                mime="application/json"
+            )
+
+        # ---- Emails and Phones ---- #
+        with st.expander("📧 Extracted Emails"):
+            st.write(list(set(aggregated['emails'])) or "None")
+
+        with st.expander("📱 Extracted Phone Numbers"):
+            st.write(list(set(aggregated['phones'])) or "None")
+
+        # ---- Pages Overview ---- #
+        st.header("🗂️ Pages Overview")
+        for url, data in results.items():
+            if data['status'] == 'success':
+                st.markdown(f"✅ **{url}** — {data['links']} links, {data['images']} images, {data['text_length']} chars")
+            else:
+                st.markdown(f"❌ **{url}** — {data.get('error', 'Unknown error')}")
