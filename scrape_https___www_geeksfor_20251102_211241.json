@@ -1,78 +1,78 @@
 {
   "meta": {
     "url": "https://www.geeksforgeeks.org/dsa/introduction-to-graphs-data-structure-and-algorithm-tutorials/",
-    "time": "2025-11-02 14:16:08",
-    "ok": 3,
+    "time": "2025-11-02 21:12:41",
+    "ok": 2,
     "fail": 0
   },
   "stats": {
-    "links": 301,
-    "images": 40,
-    "words": 21844,
-    "unique": 2073,
+    "links": 249,
+    "images": 31,
+    "words": 18081,
+    "unique": 1800,
     "emails": 1,
     "phones": 0
   },
   "keywords": [
     [
-      "geeksforgeeks",
-      767
-    ],
-    [
-      "https",
-      759
-    ],
-    [
       "nextui",
       732
     ],
     [
+      "https",
+      578
+    ],
+    [
+      "geeksforgeeks",
+      577
+    ],
+    [
       "courses",
-      384
-    ],
-    [
-      "link",
-      371
-    ],
-    [
-      "title",
-      353
-    ],
-    [
-      "false",
-      324
-    ],
-    [
-      "children",
-      300
-    ],
-    [
-      "data",
-      296
-    ],
-    [
-      "media",
-      294
-    ],
-    [
-      "null",
-      291
-    ],
-    [
-      "font",
-      282
-    ],
-    [
-      "true",
-      281
+      286
     ],
     [
       "colors",
       275
     ],
     [
+      "font",
+      268
+    ],
+    [
+      "media",
+      255
+    ],
+    [
+      "data",
+      249
+    ],
+    [
+      "link",
+      221
+    ],
+    [
+      "background",
+      206
+    ],
+    [
       "content",
-      220
+      198
+    ],
+    [
+      "title",
+      195
+    ],
+    [
+      "null",
+      166
+    ],
+    [
+      "true",
+      160
+    ],
+    [
+      "false",
+      155
     ]
   ],
   "emails": [

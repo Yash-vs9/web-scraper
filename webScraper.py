@@ -5,19 +5,17 @@ from html.parser import HTMLParser
 from collections import Counter
 from datetime import datetime
 import pandas as pd, plotly.express as px
-from dotenv import load_dotenv
+from pathlib import Path
+from pathlib import Path
 import os
+
 # ---- 8 Globals ----
-load_dotenv()  # Load environment variables from .env file
-GEMINI_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_KEY = "JUST FOR SAMPLE, IM NOT CREATING NEW VARIABLE FOR THIS KEY BECAUSE OF THE 8 VARIABLE CONSTRAINT"
+
 genai.configure(api_key=GEMINI_KEY)
 
 H = {"User-Agent": "Mozilla/5.0"}
-TR = 2000
-TMOUT = 10
-DELAY = 0.5
-FP = "scrape"
-MAXDEF = 5
+
 
 st.set_page_config(page_title="🌐 Smart Web Crawler", layout="wide")
 st.title("🔍 Web Crawler & AI Analyzer")
@@ -56,17 +54,14 @@ class Parser(HTMLParser):
 # ---- Core ----
 def scrape(u):
     try:
-        ctx = ssl._create_unverified_context()
-        return urlopen(Request(u, headers=H), context=ctx, timeout=TMOUT).read().decode('utf-8', 'ignore')
+        return urlopen(Request(u, headers=H), context=ssl._create_unverified_context(), timeout=10).read().decode('utf-8', 'ignore')
     except:
         return ""
 
 def norm(u, b):
     if not u or u.startswith(('#', 'js', 'mail', 'tel')):
         return None
-    f = urljoin(b, u)
-    p = urlparse(f)
-    return f"{p.scheme}://{p.netloc}{p.path}".rstrip('/')
+    return f"{urlparse(urljoin(b, u)).scheme}://{urlparse(urljoin(b, u)).netloc}{urlparse(urljoin(b, u)).path}".rstrip('/')
 
 def crawl(start, maxp, cb):
     vis, to_do, res = set(), [start], {}
@@ -83,7 +78,7 @@ def crawl(start, maxp, cb):
             res[u] = {
                 'status': 'ok',
                 'data': p.d,
-                'links': len(p.d['links']),
+                'links': len(p.d['links']), 
                 'images': len(p.d['images']),
                 'headings': len(p.d['headings']),
                 'emails': list(set(p.d['emails'])),
@@ -95,7 +90,7 @@ def crawl(start, maxp, cb):
                 if n and urlparse(n).netloc == dom and n not in vis:
                     to_do.append(n)
             vis.add(u)
-            time.sleep(DELAY)
+            time.sleep(0.5)
         except Exception as e:
             res[u] = {'status': 'fail', 'err': str(e)}
             vis.add(u)
@@ -126,7 +121,7 @@ def stats(d):
 # ---- AI Summary (Gemini) ----
 def summary(t):
     try:
-        s = t[:TR] + "…" if len(t) > TR else t
+        s = t[:2000] + "…" if len(t) > 2000 else t
         model = genai.GenerativeModel("gemini-2.0-flash")  # you can also use "gemini-pro"
         prompt = f"Summarize the following website content clearly and concisely:\n\n{s}"
         response = model.generate_content(prompt)
@@ -136,7 +131,7 @@ def summary(t):
 
 # ---- Export ----
 def save(url, r, a, s):
-    fn = f"{FP}_{re.sub(r'[^a-zA-Z0-9]', '_', url[:20])}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    fn = f"{'scrape'}_{re.sub(r'[^a-zA-Z0-9]', '_', url[:20])}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     out = {
         'meta': {'url': url, 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                  'ok': len([x for x in r.values() if x.get('status') == 'ok']),
@@ -151,7 +146,7 @@ def save(url, r, a, s):
 
 # ---- UI ----
 url = st.text_input("🌍 Enter site URL")
-maxp = st.slider("📄 Max pages", 1, 50, MAXDEF)
+maxp = st.slider("📄 Max pages", 1, 50, 5)
 
 if st.button("🚀 Crawl"):
     if not url:

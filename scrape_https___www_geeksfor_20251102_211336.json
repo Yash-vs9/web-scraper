@@ -1,42 +1,38 @@
 {
   "meta": {
-    "url": "https://www.geeksforgeeks.org/dsa/introduction-to-graphs-data-structure-and-algorithm-tutorials/",
-    "time": "2025-11-02 14:03:46",
+    "url": "https://www.geeksforgeeks.org/dsa/breadth-first-search-or-bfs-for-a-graph/",
+    "time": "2025-11-02 21:13:36",
     "ok": 1,
     "fail": 0
   },
   "stats": {
-    "links": 146,
-    "images": 19,
-    "words": 6401,
-    "unique": 1229,
+    "links": 138,
+    "images": 14,
+    "words": 6996,
+    "unique": 1171,
     "emails": 0,
     "phones": 0
   },
   "keywords": [
     [
       "geeksforgeeks",
-      159
+      149
     ],
     [
       "https",
-      140
-    ],
-    [
-      "data",
-      102
-    ],
-    [
-      "courses",
-      92
+      130
     ],
     [
       "function",
-      83
+      88
     ],
     [
-      "graph",
-      73
+      "visited",
+      79
+    ],
+    [
+      "courses",
+      69
     ],
     [
       "document",
@@ -59,20 +55,24 @@
       67
     ],
     [
+      "addedge",
+      66
+    ],
+    [
       "important",
       63
     ],
     [
+      "data",
+      62
+    ],
+    [
+      "const",
+      61
+    ],
+    [
       "popup",
       59
-    ],
-    [
-      "media",
-      56
-    ],
-    [
-      "main",
-      50
     ]
   ],
   "emails": [],
