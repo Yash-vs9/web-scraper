@@ -8,6 +8,10 @@ import pandas as pd, plotly.express as px
 
 
 # ---- Variable 1: G (Global config) ----
+
+#WHOEVER IT MAY CONCERN ,I HAVE ALREADY DELETED THE KEY SO DONT WASTE YOUR TIME :D
+#FOR JUDGES -> YOU HAVE TO PUT YOUR GEMINI KEY DOWN BELOW, THANK YOU
+
 G = ["AIzaSyCFvfMQrrtRfU8bmhN52OZCSnD3S1IFe18", {'this', 'that', 'with', 'from', 'have', 'will', 'your', 'about', 'which', 'their', 'there'}]
 
 
