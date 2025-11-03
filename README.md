@@ -42,5 +42,5 @@ It extracts data like links, images, emails, and text from any website, and even
 ```bash
 git clone https://github.com/your-username/streamlit-ai-webscraper.git
 cd streamlit-ai-webscraper
-pip install -r requirements.txt (PUT YOUR GEMINI API KEY ON LINE 15, I HAVENT CREATED A VARIABLE FOR IT BECAUSE OF VARIABLE CONSTRAINTS)
+pip install -r requirements.txt (PUT YOUR GEMINI API KEY ON LINE 13, I HAVENT CREATED A VARIABLE FOR IT BECAUSE OF VARIABLE CONSTRAINTS)
 streamlit run webScraper.py

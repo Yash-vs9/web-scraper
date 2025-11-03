@@ -8,6 +8,8 @@ import pandas as pd, plotly.express as px
 
 
 # ---- Variable 1: G (Global config) ----
+#TO WHOM IT MAY CONCERN, DONT WASTE YOUR TIME USING THIS KEY, I'VE ALREADY DELETED IT
+#IF YOU ARE A JUDGE THEN PLEASE PUT YOUR GEMINI KEY BELOW ON LINE 13
 G = ["AIzaSyCs_UKZ0x68_qIM1LPSkJ9r6we38fUh2u0", {'this', 'that', 'with', 'from', 'have', 'will', 'your', 'about', 'which', 'their', 'there'}]
 
 genai.configure(api_key=G[0])
