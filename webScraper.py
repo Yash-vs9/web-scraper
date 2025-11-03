@@ -5,56 +5,52 @@ from html.parser import HTMLParser
 from collections import Counter
 from datetime import datetime
 import pandas as pd, plotly.express as px
-from pathlib import Path
-from pathlib import Path
-import os
 
 # ---- 8 Globals ----
-GEMINI_KEY = "JUST FOR SAMPLE, IM NOT CREATING NEW VARIABLE FOR THIS KEY BECAUSE OF THE 8 VARIABLE CONSTRAINT"
+G = [  # Global config list
+    "AIzaSyCFvfMQrrtRfU8bmhN52OZCSnD3S1IFe18",  # API key
+    {'this', 'that', 'with', 'from', 'have', 'will', 'your', 'about', 'which', 'their', 'there'}  # stopwords
+]
 
-genai.configure(api_key=GEMINI_KEY)
-
-H = {"User-Agent": "Mozilla/5.0"}
-
-
+genai.configure(api_key=G[0])
 st.set_page_config(page_title="🌐 Smart Web Crawler", layout="wide")
 st.title("🔍 Web Crawler & AI Analyzer")
 st.caption("Crawl any website, extract info, analyze keywords, and generate an AI summary.")
 
 # ---- Parser ----
 class Parser(HTMLParser):
-    def __init__(s):
+    def __init__(P):
         super().__init__()
-        s.d = {'links': [], 'headings': [], 'images': [], 'text': [], 'emails': [], 'phones': []}
-        s.t = None
+        P.d = {'links': [], 'headings': [], 'images': [], 'text': [], 'emails': [], 'phones': []}
+        P.t = None
 
-    def handle_starttag(s, t, a):
+    def handle_starttag(P, t, a):
         a = dict(a)
         if t == 'a' and 'href' in a:
-            s.d['links'].append(a['href'])
+            P.d['links'].append(a['href'])
         if t == 'img' and 'src' in a:
-            s.d['images'].append({'src': a['src'], 'alt': a.get('alt', '')})
+            P.d['images'].append({'src': a['src'], 'alt': a.get('alt', '')})
         if t in ('h1', 'h2', 'h3', 'h4'):
-            s.t = t
+            P.t = t
 
-    def handle_endtag(s, t):
+    def handle_endtag(P, t):
         if t in ('h1', 'h2', 'h3', 'h4'):
-            s.t = None
+            P.t = None
 
-    def handle_data(s, x):
+    def handle_data(P, x):
         x = x.strip()
         if not x:
             return
-        if s.t:
-            s.d['headings'].append({'level': s.t, 'text': x})
-        s.d['text'].append(x)
-        s.d['emails'] += re.findall(r'\b[\w\.-]+@[\w\.-]+\.\w+\b', x)
-        s.d['phones'] += re.findall(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b', x)
+        if P.t:
+            P.d['headings'].append({'level': P.t, 'text': x})
+        P.d['text'].append(x)
+        P.d['emails'] += re.findall(r'\b[\w\.-]+@[\w\.-]+\.\w+\b', x)
+        P.d['phones'] += re.findall(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b', x)
 
 # ---- Core ----
 def scrape(u):
     try:
-        return urlopen(Request(u, headers=H), context=ssl._create_unverified_context(), timeout=10).read().decode('utf-8', 'ignore')
+        return urlopen(Request(u, headers={"User-Agent": "Mozilla/5.0"}), context=ssl._create_unverified_context(), timeout=10).read().decode('utf-8', 'ignore')
     except:
         return ""
 
@@ -64,135 +60,123 @@ def norm(u, b):
     return f"{urlparse(urljoin(b, u)).scheme}://{urlparse(urljoin(b, u)).netloc}{urlparse(urljoin(b, u)).path}".rstrip('/')
 
 def crawl(start, maxp, cb):
-    vis, to_do, res = set(), [start], {}
-    dom = urlparse(start).netloc
-    while to_do and len(vis) < maxp:
-        u = to_do.pop(0)
-        if u in vis:
+    X = [set(), [start], {}, urlparse(start).netloc, None, None, None]
+    while X[1] and len(X[0]) < maxp:
+        X[4] = X[1].pop(0)
+        if X[4] in X[0]:
             continue
         try:
-            cb(f"🔍 Crawling {len(vis) + 1}/{maxp}: {u}")
-            h = scrape(u)
-            p = Parser()
-            p.feed(h)
-            res[u] = {
-                'status': 'ok',
-                'data': p.d,
-                'links': len(p.d['links']), 
-                'images': len(p.d['images']),
-                'headings': len(p.d['headings']),
-                'emails': list(set(p.d['emails'])),
-                'phones': list(set(p.d['phones'])),
-                'text_len': sum(len(t) for t in p.d['text'])
+            cb(f"🔍 Crawling {len(X[0]) + 1}/{maxp}: {X[4]}")
+            X[5] = Parser()
+            X[5].feed(scrape(X[4]))
+            X[2][X[4]] = {
+                'status': 'ok', 'data': X[5].d, 'links': len(X[5].d['links']),
+                'images': len(X[5].d['images']), 'headings': len(X[5].d['headings']),
+                'emails': list(set(X[5].d['emails'])), 'phones': list(set(X[5].d['phones'])),
+                'text_len': sum(len(t) for t in X[5].d['text'])
             }
-            for l in p.d['links']:
-                n = norm(l, u)
-                if n and urlparse(n).netloc == dom and n not in vis:
-                    to_do.append(n)
-            vis.add(u)
+            for X[6] in X[5].d['links']:
+                X[6] = norm(X[6], X[4])
+                if X[6] and urlparse(X[6]).netloc == X[3] and X[6] not in X[0]:
+                    X[1].append(X[6])
+            X[0].add(X[4])
             time.sleep(0.5)
-        except Exception as e:
-            res[u] = {'status': 'fail', 'err': str(e)}
-            vis.add(u)
-    return res, vis
+        except Exception as E:
+            X[2][X[4]] = {'status': 'fail', 'err': str(E)}
+            X[0].add(X[4])
+    return X[2], X[0]
 
 # ---- Analysis ----
 def aggr(r):
-    d = {'links': [], 'headings': [], 'images': [], 'text': [], 'emails': [], 'phones': []}
-    for v in r.values():
-        if v.get('status') == 'ok':
-            for k in d:
-                d[k].extend(v['data'][k])
-    return d
+    X = {'links':[], 'headings':[], 'images':[], 'text':[], 'emails':[], 'phones':[]}
+    [X[k].extend(v['data'][k]) for v in r.values() if v.get('status')=='ok' for k in X]
+    return X
 
 def stats(d):
-    t = ' '.join(d['text'])
-    w = re.findall(r'\b[a-zA-Z]{4,}\b', t.lower())
-    sw = {'this', 'that', 'with', 'from', 'have', 'will', 'your', 'about', 'which', 'their', 'there'}
-    f = [x for x in w if x not in sw]
+    S = [' '.join(d['text']), None, None]  # [text, words, filtered]
+    S[1] = re.findall(r'\b[a-zA-Z]{4,}\b', S[0].lower())
+    S[2] = [x for x in S[1] if x not in G[1]]
     return {
-        'tw': len(w),
-        'uw': len(set(w)),
-        'top': Counter(f).most_common(15),
-        'em': len(set(d['emails'])),
-        'ph': len(set(d['phones']))
+        'tw': len(S[1]), 'uw': len(set(S[1])), 'top': Counter(S[2]).most_common(15),
+        'em': len(set(d['emails'])), 'ph': len(set(d['phones']))
     }
 
 # ---- AI Summary (Gemini) ----
 def summary(t):
     try:
-        s = t[:2000] + "…" if len(t) > 2000 else t
-        model = genai.GenerativeModel("gemini-2.0-flash")  # you can also use "gemini-pro"
-        prompt = f"Summarize the following website content clearly and concisely:\n\n{s}"
-        response = model.generate_content(prompt)
-        return response.text.strip()
+        S = [t[:2000] + "…" if len(t) > 2000 else t, genai.GenerativeModel("gemini-2.0-flash")]
+        return S[1].generate_content(f"Summarize the following website content clearly and concisely:\n\n{S[0]}").text.strip()
     except Exception as e:
         return f"❌ {e}"
 
-# ---- Export ----
 def save(url, r, a, s):
-    fn = f"{'scrape'}_{re.sub(r'[^a-zA-Z0-9]', '_', url[:20])}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    out = {
-        'meta': {'url': url, 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                 'ok': len([x for x in r.values() if x.get('status') == 'ok']),
-                 'fail': len([x for x in r.values() if x.get('status') == 'fail'])},
-        'stats': {'links': len(a['links']), 'images': len(a['images']),
-                  'words': s['tw'], 'unique': s['uw'], 'emails': s['em'], 'phones': s['ph']},
-        'keywords': s['top'], 'emails': list(set(a['emails'])), 'phones': list(set(a['phones']))
-    }
-    with open(fn, 'w', encoding='utf-8') as f:
-        f.write(json.dumps(out, indent=2))
-    return fn
+    F = [
+        f"scrape_{re.sub(r'[^a-zA-Z0-9]', '_', url[:20])}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        {
+            'meta': {'url': url, 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                     'ok': len([x for x in r.values() if x.get('status') == 'ok']),
+                     'fail': len([x for x in r.values() if x.get('status') == 'fail'])},
+            'stats': {'links': len(a['links']), 'images': len(a['images']),
+                      'words': s['tw'], 'unique': s['uw'], 'emails': s['em'], 'phones': s['ph']},
+            'keywords': s['top'], 'emails': list(set(a['emails'])), 'phones': list(set(a['phones']))
+        }
+    ]
+    with open(F[0], 'w', encoding='utf-8') as f:
+        f.write(json.dumps(F[1], indent=2))
+    return F[0]
 
 # ---- UI ----
-url = st.text_input("🌍 Enter site URL")
-maxp = st.slider("📄 Max pages", 1, 50, 5)
+Z = [st.text_input("🌍 Enter site URL"), st.slider("📄 Max pages", 1, 50, 5)]
 
 if st.button("🚀 Crawl"):
-    if not url:
+    if not Z[0]:
         st.error("Enter valid URL")
     else:
-        if not url.startswith('http'):
-            url = 'https://' + url
-        prog = st.empty()
+        if not Z[0].startswith('http'):
+            Z[0] = 'https://' + Z[0]
+        Z.extend([st.empty(), None, None, None, None, None])  # Extend Z to hold all data
+        
         with st.spinner("Crawling..."):
-            r, v = crawl(url, maxp, lambda m: prog.info(m))
-        st.success(f"✅ Done! {len(v)} pages.")
-        a = aggr(r)
-        s = stats(a)
-        fn = save(url, r, a, s)
+            Z[3] = crawl(Z[0], Z[1], lambda m: Z[2].info(m))
+        st.success(f"✅ Done! {len(Z[3][1])} pages.")
+
+        Z[4] = aggr(Z[3][0])
+        Z[5] = stats(Z[4])
+        Z[6] = save(Z[0], Z[3][0], Z[4], Z[5])
 
         st.subheader("📊 Stats")
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Words", f"{s['tw']:,}")
-        c2.metric("Unique", f"{s['uw']:,}")
-        c3.metric("Emails", s['em'])
-        c4.metric("Phones", s['ph'])
+        Z[7] = st.columns(4)
+        Z[7][0].metric("Words", f"{Z[5]['tw']:,}")
+        Z[7][1].metric("Unique", f"{Z[5]['uw']:,}")
+        Z[7][2].metric("Emails", Z[5]['em'])
+        Z[7][3].metric("Phones", Z[5]['ph'])
 
         st.subheader("📝 AI Summary")
-        st.write(summary(' '.join(a['text'])))
+        st.write(summary(' '.join(Z[4]['text'])))
 
         st.subheader("🔑 Top Keywords")
-        df = pd.DataFrame(s['top'], columns=['Word', 'Count'])
-        fig = px.bar(df, x='Word', y='Count', color='Count', title="Top Keywords")
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(
+            px.bar(pd.DataFrame(Z[5]['top'], columns=['Word', 'Count']),
+                   x='Word', y='Count', color='Count', title="Top Keywords"),
+            use_container_width=True
+        )
 
-        with open(fn, 'r', encoding='utf-8') as fh:
-            st.download_button("💾 Download Report", fh.read(), file_name=fn, mime="application/json")
+        with open(Z[6], 'r', encoding='utf-8') as F:
+            st.download_button("💾 Download Report", F.read(), file_name=Z[6], mime="application/json")
 
         with st.expander("📧 Emails"):
-            st.write(list(set(a['emails'])) or "None")
+            st.write(list(set(Z[4]['emails'])) or "None")
 
         with st.expander("📱 Phones"):
-            st.write(list(set(a['phones'])) or "None")
+            st.write(list(set(Z[4]['phones'])) or "None")
 
         st.header("🗂️ Pages")
-        for u, d in r.items():
-            if d.get('status') == 'ok':
-                st.markdown(f"✅ **{u}** — {d['links']} links, {d['images']} imgs, {d['headings']} headings")
-                with st.expander(f"🔗 Links in {u}"):
-                    st.write(d['data']['links'] or "None")
-                with st.expander(f"📑 Headings in {u}"):
-                    st.write(d['data']['headings'] or "None")
+        for U, D in Z[3][0].items():
+            if D.get('status') == 'ok':
+                st.markdown(f"✅ **{U}** — {D['links']} links, {D['images']} imgs, {D['headings']} headings")
+                with st.expander(f"🔗 Links in {U}"):
+                    st.write(D['data']['links'] or "None")
+                with st.expander(f"📑 Headings in {U}"):
+                    st.write(D['data']['headings'] or "None")
             else:
-                st.markdown(f"❌ **{u}** — {d.get('err')}")
+                st.markdown(f"❌ **{U}** — {D.get('err')}")
