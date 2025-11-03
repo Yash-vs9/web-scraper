@@ -6,16 +6,16 @@ from collections import Counter
 from datetime import datetime
 import pandas as pd, plotly.express as px
 
-# ---- 8 Globals ----
-G = [  # Global config list
-    "AIzaSyCFvfMQrrtRfU8bmhN52OZCSnD3S1IFe18",  # API key
-    {'this', 'that', 'with', 'from', 'have', 'will', 'your', 'about', 'which', 'their', 'there'}  # stopwords
-]
+
+# ---- Variable 1: G (Global config) ----
+G = ["AIzaSyCFvfMQrrtRfU8bmhN52OZCSnD3S1IFe18", {'this', 'that', 'with', 'from', 'have', 'will', 'your', 'about', 'which', 'their', 'there'}]
+
 
 genai.configure(api_key=G[0])
 st.set_page_config(page_title="🌐 Smart Web Crawler", layout="wide")
 st.title("🔍 Web Crawler & AI Analyzer")
 st.caption("Crawl any website, extract info, analyze keywords, and generate an AI summary.")
+
 
 # ---- Parser ----
 class Parser(HTMLParser):
@@ -47,33 +47,36 @@ class Parser(HTMLParser):
         P.d['emails'] += re.findall(r'\b[\w\.-]+@[\w\.-]+\.\w+\b', x)
         P.d['phones'] += re.findall(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b', x)
 
-# ---- Core ----
-def scrape(u):
+
+
+def scrape(G):  # Reuse G as parameter
     try:
-        return urlopen(Request(u, headers={"User-Agent": "Mozilla/5.0"}), context=ssl._create_unverified_context(), timeout=10).read().decode('utf-8', 'ignore')
+        return urlopen(Request(G, headers={"User-Agent": "Mozilla/5.0"}), context=ssl._create_unverified_context(), timeout=10).read().decode('utf-8', 'ignore')
     except:
         return ""
 
-def norm(u, b):
-    if not u or u.startswith(('#', 'js', 'mail', 'tel')):
-        return None
-    return f"{urlparse(urljoin(b, u)).scheme}://{urlparse(urljoin(b, u)).netloc}{urlparse(urljoin(b, u)).path}".rstrip('/')
 
-def crawl(start, maxp, cb):
-    X = [set(), [start], {}, urlparse(start).netloc, None, None, None]
-    while X[1] and len(X[0]) < maxp:
+def norm(G, X):  # Reuse G and X as parameters
+    if not G or G.startswith(('#', 'js', 'mail', 'tel')):
+        return None
+    return f"{urlparse(urljoin(X, G)).scheme}://{urlparse(urljoin(X, G)).netloc}{urlparse(urljoin(X, G)).path}".rstrip('/')
+
+
+def crawl(X, Z, D):  # Variable 2: X, Variable 3: Z, Variable 4: D
+    X = [set(), [X], {}, urlparse(X).netloc, None, None, None]
+    while X[1] and len(X[0]) < Z:
         X[4] = X[1].pop(0)
         if X[4] in X[0]:
             continue
         try:
-            cb(f"🔍 Crawling {len(X[0]) + 1}/{maxp}: {X[4]}")
+            D(f"🔍 Crawling {len(X[0]) + 1}/{Z}: {X[4]}")
             X[5] = Parser()
             X[5].feed(scrape(X[4]))
             X[2][X[4]] = {
                 'status': 'ok', 'data': X[5].d, 'links': len(X[5].d['links']),
                 'images': len(X[5].d['images']), 'headings': len(X[5].d['headings']),
                 'emails': list(set(X[5].d['emails'])), 'phones': list(set(X[5].d['phones'])),
-                'text_len': sum(len(t) for t in X[5].d['text'])
+                'text_len': sum(len(Z) for Z in X[5].d['text'])
             }
             for X[6] in X[5].d['links']:
                 X[6] = norm(X[6], X[4])
@@ -81,52 +84,59 @@ def crawl(start, maxp, cb):
                     X[1].append(X[6])
             X[0].add(X[4])
             time.sleep(0.5)
-        except Exception as E:
-            X[2][X[4]] = {'status': 'fail', 'err': str(E)}
+        except Exception as Z:  # Reuse Z for exception
+            X[2][X[4]] = {'status': 'fail', 'err': str(Z)}
             X[0].add(X[4])
     return X[2], X[0]
 
-# ---- Analysis ----
-def aggr(r):
-    X = {'links':[], 'headings':[], 'images':[], 'text':[], 'emails':[], 'phones':[]}
-    [X[k].extend(v['data'][k]) for v in r.values() if v.get('status')=='ok' for k in X]
-    return X
 
-def stats(d):
-    S = [' '.join(d['text']), None, None]  # [text, words, filtered]
-    S[1] = re.findall(r'\b[a-zA-Z]{4,}\b', S[0].lower())
-    S[2] = [x for x in S[1] if x not in G[1]]
+
+def aggr(D):
+    Z = {'links': [], 'headings': [], 'images': [], 'text': [], 'emails': [], 'phones': []}
+    for X in D.values():
+        if X.get('status') == 'ok':
+            for D in Z:
+                Z[D].extend(X['data'][D])
+    return Z
+
+def stats(D):  # Reuse D
+    X = [' '.join(D['text']), None, None]
+    X[1] = re.findall(r'\b[a-zA-Z]{4,}\b', X[0].lower())
+    X[2] = [Z for Z in X[1] if Z not in G[1]]
     return {
-        'tw': len(S[1]), 'uw': len(set(S[1])), 'top': Counter(S[2]).most_common(15),
-        'em': len(set(d['emails'])), 'ph': len(set(d['phones']))
+        'tw': len(X[1]), 'uw': len(set(X[1])), 'top': Counter(X[2]).most_common(15),
+        'em': len(set(D['emails'])), 'ph': len(set(D['phones']))
     }
 
-# ---- AI Summary (Gemini) ----
-def summary(t):
-    try:
-        S = [t[:2000] + "…" if len(t) > 2000 else t, genai.GenerativeModel("gemini-2.0-flash")]
-        return S[1].generate_content(f"Summarize the following website content clearly and concisely:\n\n{S[0]}").text.strip()
-    except Exception as e:
-        return f"❌ {e}"
 
-def save(url, r, a, s):
-    F = [
-        f"scrape_{re.sub(r'[^a-zA-Z0-9]', '_', url[:20])}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+
+def summary(X):  # Reuse X
+    try:
+        X = [X[:2000] + "…" if len(X) > 2000 else X, genai.GenerativeModel("gemini-2.0-flash")]
+        return X[1].generate_content(f"Summarize the following website content clearly and concisely:\n\n{X[0]}").text.strip()
+    except Exception as Z:
+        return f"{Z}"
+
+
+def save(G, X, D, Z):  # Reuse all as parameters
+    X = [
+        f"scrape_{re.sub(r'[^a-zA-Z0-9]', '_', G[:20])}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
         {
-            'meta': {'url': url, 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                     'ok': len([x for x in r.values() if x.get('status') == 'ok']),
-                     'fail': len([x for x in r.values() if x.get('status') == 'fail'])},
-            'stats': {'links': len(a['links']), 'images': len(a['images']),
-                      'words': s['tw'], 'unique': s['uw'], 'emails': s['em'], 'phones': s['ph']},
-            'keywords': s['top'], 'emails': list(set(a['emails'])), 'phones': list(set(a['phones']))
+            'meta': {'url': G, 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                     'ok': len([_ for _ in X.values() if _.get('status') == 'ok']),'fail': len([_ for _ in X.values() if _.get('status') == 'fail'])},
+            'stats': {'links': len(D['links']), 'images': len(D['images']),
+                      'words': Z['tw'], 'unique': Z['uw'], 'emails': Z['em'], 'phones': Z['ph']},
+            'keywords': Z['top'], 'emails': list(set(D['emails'])), 'phones': list(set(D['phones']))
         }
     ]
-    with open(F[0], 'w', encoding='utf-8') as f:
-        f.write(json.dumps(F[1], indent=2))
-    return F[0]
+    with open(X[0], 'w', encoding='utf-8') as _:
+        _.write(json.dumps(X[1], indent=2))
+    return X[0]
 
-# ---- UI ----
+
+# ---- Variable 5: Z (Main UI state) ----
 Z = [st.text_input("🌍 Enter site URL"), st.slider("📄 Max pages", 1, 50, 5)]
+
 
 if st.button("🚀 Crawl"):
     if not Z[0]:
@@ -134,35 +144,33 @@ if st.button("🚀 Crawl"):
     else:
         if not Z[0].startswith('http'):
             Z[0] = 'https://' + Z[0]
-        Z.extend([st.empty(), None, None, None, None, None])  # Extend Z to hold all data
+        Z.extend([st.empty(), None, None, None, None, None])
         
         with st.spinner("Crawling..."):
-            Z[3] = crawl(Z[0], Z[1], lambda m: Z[2].info(m))
+            Z[3] = crawl(Z[0], Z[1], lambda X: Z[2].info(X))
         st.success(f"✅ Done! {len(Z[3][1])} pages.")
 
         Z[4] = aggr(Z[3][0])
         Z[5] = stats(Z[4])
         Z[6] = save(Z[0], Z[3][0], Z[4], Z[5])
 
-        st.subheader("📊 Stats")
-        Z[7] = st.columns(4)
+        st.subheader(" Stats");Z[7] = st.columns(4)
         Z[7][0].metric("Words", f"{Z[5]['tw']:,}")
         Z[7][1].metric("Unique", f"{Z[5]['uw']:,}")
         Z[7][2].metric("Emails", Z[5]['em'])
         Z[7][3].metric("Phones", Z[5]['ph'])
 
-        st.subheader("📝 AI Summary")
+        st.subheader(" AI Summary")
         st.write(summary(' '.join(Z[4]['text'])))
 
-        st.subheader("🔑 Top Keywords")
+        st.subheader("Top Keywords")
         st.plotly_chart(
             px.bar(pd.DataFrame(Z[5]['top'], columns=['Word', 'Count']),
                    x='Word', y='Count', color='Count', title="Top Keywords"),
             use_container_width=True
         )
 
-        with open(Z[6], 'r', encoding='utf-8') as F:
-            st.download_button("💾 Download Report", F.read(), file_name=Z[6], mime="application/json")
+
 
         with st.expander("📧 Emails"):
             st.write(list(set(Z[4]['emails'])) or "None")
@@ -171,12 +179,13 @@ if st.button("🚀 Crawl"):
             st.write(list(set(Z[4]['phones'])) or "None")
 
         st.header("🗂️ Pages")
-        for U, D in Z[3][0].items():
-            if D.get('status') == 'ok':
-                st.markdown(f"✅ **{U}** — {D['links']} links, {D['images']} imgs, {D['headings']} headings")
-                with st.expander(f"🔗 Links in {U}"):
-                    st.write(D['data']['links'] or "None")
-                with st.expander(f"📑 Headings in {U}"):
-                    st.write(D['data']['headings'] or "None")
+        # Variable 7: D, Variable 8: X (loop variables)
+        for D, X in Z[3][0].items():
+            if X.get('status') == 'ok':
+                st.markdown(f" **{D}** — {X['links']} links, {X['images']} imgs, {X['headings']} headings")
+                with st.expander(f"🔗 Links in {D}"):
+                    st.write(X['data']['links'] or "None")
+                with st.expander(f"📑 Headings in {D}"):
+                    st.write(X['data']['headings'] or "None")
             else:
-                st.markdown(f"❌ **{U}** — {D.get('err')}")
+                st.markdown(f"**{D}** — {X.get('err')}")
