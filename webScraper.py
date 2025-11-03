@@ -70,8 +70,7 @@ def crawl(Z, D, F):
             continue
         try:
             F(f"🔍 Crawling {len(Z[0]) + 1}/{D}: {Z[4]}")
-            Z[5] = Parser()
-            Z[5].feed(scrape(Z[4]))
+            Z[5] = Parser();Z[5].feed(scrape(Z[4]))
             Z[2][Z[4]] = {
                 'status': 'ok', 'data': Z[5].d, 'links': len(Z[5].d['links']),
                 'images': len(Z[5].d['images']), 'headings': len(Z[5].d['headings']),
@@ -123,11 +122,8 @@ def save(F, X, D, Z):
     F = [
         f"scrape_{re.sub(r'[^a-zA-Z0-9]', '_', F[:20])}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
         {
-            'meta': {'url': F, 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                     'ok': len([_ for _ in X.values() if _.get('status') == 'ok']),
-                     'fail': len([_ for _ in X.values() if _.get('status') == 'fail'])},
-            'stats': {'links': len(D['links']), 'images': len(D['images']),
-                      'words': Z['tw'], 'unique': Z['uw'], 'emails': Z['em'], 'phones': Z['ph']},
+            'meta': {'url': F, 'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),'ok': len([_ for _ in X.values() if _.get('status') == 'ok']),'fail': len([_ for _ in X.values() if _.get('status') == 'fail'])},
+            'stats': {'links': len(D['links']), 'images': len(D['images']),'words': Z['tw'], 'unique': Z['uw'], 'emails': Z['em'], 'phones': Z['ph']},
             'keywords': Z['top'], 'emails': list(set(D['emails'])), 'phones': list(set(D['phones']))
         }
     ]
@@ -161,24 +157,15 @@ if st.button("🚀 Crawl"):
             st.error("❌ No data found! Please enter a valid URL.")
             st.session_state.crawl_data = None
         else:
-            st.success(f"✅ Done! {len(U[3][1])} pages.")
-            U[6] = save(U[0], U[3][0], U[4], U[5])
-            st.session_state.crawl_data = {'results': U[3], 'aggr': U[4], 'stats': U[5], 'file': U[6]}
+            st.success(f"✅ Done! {len(U[3][1])} pages.");U[6] = save(U[0], U[3][0], U[4], U[5]);st.session_state.crawl_data = {'results': U[3], 'aggr': U[4], 'stats': U[5], 'file': U[6]}
 
 # Display results if data exists in session state
 if st.session_state.crawl_data:
     U = [None, None, None, 
-         st.session_state.crawl_data['results'],
-         st.session_state.crawl_data['aggr'],
-         st.session_state.crawl_data['stats'],
-         st.session_state.crawl_data['file'],
-         st.columns(4)]  # Directly assign columns to U[7]
+         st.session_state.crawl_data['results'],st.session_state.crawl_data['aggr'],st.session_state.crawl_data['stats'],st.session_state.crawl_data['file'],st.columns(4)]  # Directly assign columns to U[7]
     
     st.subheader("📊 Stats")
-    U[7][0].metric("Words", f"{U[5]['tw']:,}")
-    U[7][1].metric("Unique", f"{U[5]['uw']:,}")
-    U[7][2].metric("Emails", U[5]['em'])
-    U[7][3].metric("Phones", U[5]['ph'])
+    U[7][0].metric("Words", f"{U[5]['tw']:,}");U[7][1].metric("Unique", f"{U[5]['uw']:,}");U[7][2].metric("Emails", U[5]['em']);U[7][3].metric("Phones", U[5]['ph'])
 
     st.subheader("📝 AI Summary")
     st.write(summary(' '.join(U[4]['text'])))
